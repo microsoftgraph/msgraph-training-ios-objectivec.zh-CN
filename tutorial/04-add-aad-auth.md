@@ -5,7 +5,7 @@
 1. 在名为**AuthSettings**的**GraphTutorial**项目中创建一个新的**属性列表**文件。
 1. 将以下项添加到**根**字典中的文件中。
 
-    | Key | 类型 | 值 |
+    | 键 | 类型 | 值 |
     |-----|------|-------|
     | `AppId` | String | Azure 门户中的应用程序 ID |
     | `GraphScopes` | 数组 | 两个字符串值`User.Read` ：和`Calendars.Read` |
@@ -20,6 +20,11 @@
 在本节中，您将为 MSAL 配置项目，创建身份验证管理器类，并更新应用程序以进行登录和注销。
 
 ### <a name="configure-project-for-msal"></a>为 MSAL 配置项目
+
+1. 将新的密钥链组添加到项目的功能中。
+    1. 依次选择 " **GraphTutorial** " 项目、"**签名 & 功能**"。
+    1. 选择 " **+ 功能**"，然后双击 "**密钥链共享**"。
+    1. 添加具有值`com.microsoft.adalcache`的密钥链组。
 
 1. 控件单击 " **plist** "，然后选择 "**打开方式**"，然后选择 "**源代码**"。
 1. 在`<dict>`元素内添加以下项。
@@ -67,17 +72,19 @@
     ```objc
     #import <Foundation/Foundation.h>
     #import <MSAL/MSAL.h>
+    #import <MSGraphClientSDK/MSGraphClientSDK.h>
 
     NS_ASSUME_NONNULL_BEGIN
 
     typedef void (^GetTokenCompletionBlock)(NSString* _Nullable accessToken, NSError* _Nullable error);
 
-    @interface AuthenticationManager : NSObject
+    @interface AuthenticationManager : NSObject<MSAuthenticationProvider>
 
     + (id) instance;
-    - (void) getTokenInteractivelyWithCompletionBlock: (GetTokenCompletionBlock)completionBlock;
+    - (void) getTokenInteractivelyWithParentView: (UIViewController*) parentView andCompletionBlock: (GetTokenCompletionBlock)completionBlock;
     - (void) getTokenSilentlyWithCompletionBlock: (GetTokenCompletionBlock)completionBlock;
     - (void) signOut;
+    - (void) getAccessTokenForProviderOptions:(id<MSAuthenticationProviderOptions>)authProviderOptions andCompletion:(void (^)(NSString *, NSError *))completion;
 
     @end
 
@@ -114,25 +121,30 @@
             // Get app ID and scopes from AuthSettings.plist
             NSString* authConfigPath =
             [NSBundle.mainBundle pathForResource:@"AuthSettings" ofType:@"plist"];
-            NSString* bundleId = NSBundle.mainBundle.bundleIdentifier;
             NSDictionary* authConfig = [NSDictionary dictionaryWithContentsOfFile:authConfigPath];
 
             self.appId = authConfig[@"AppId"];
             self.graphScopes = authConfig[@"GraphScopes"];
 
             // Create the MSAL client
-            self.publicClient = [[MSALPublicClientApplication alloc] initWithClientId:self.appId
-                                                                        keychainGroup:bundleId
-                                                                                error:nil];
+            self.publicClient = [[MSALPublicClientApplication alloc] initWithClientId:self.appId error:nil];
         }
 
         return self;
     }
 
-    - (void) getTokenInteractivelyWithCompletionBlock:(GetTokenCompletionBlock)completionBlock {
+    - (void) getAccessTokenForProviderOptions:(id<MSAuthenticationProviderOptions>)authProviderOptions andCompletion:(void (^)(NSString * _Nonnull, NSError * _Nonnull))completion {
+        [self getTokenSilentlyWithCompletionBlock:completion];
+    }
+
+    - (void) getTokenInteractivelyWithParentView:(UIViewController *)parentView andCompletionBlock:(GetTokenCompletionBlock)completionBlock {
+        MSALWebviewParameters* webParameters = [[MSALWebviewParameters alloc] initWithParentViewController:parentView];
+        MSALInteractiveTokenParameters* interactiveParameters =
+        [[MSALInteractiveTokenParameters alloc]initWithScopes:self.graphScopes webviewParameters:webParameters];
+
         // Call acquireToken to open a browser so the user can sign in
         [self.publicClient
-         acquireTokenForScopes:self.graphScopes
+         acquireTokenWithParameters:interactiveParameters
          completionBlock:^(MSALResult * _Nullable result, NSError * _Nullable error) {
 
             // Check error
@@ -166,9 +178,12 @@
             return;
         }
 
+        MSALSilentTokenParameters* silentParameters = [[MSALSilentTokenParameters alloc] initWithScopes:self.graphScopes
+                                                                                                account:account];
+
         // Attempt to get token silently
         [self.publicClient
-         acquireTokenSilentForScopes:self.graphScopes account:account
+         acquireTokenSilentWithParameters:silentParameters
          completionBlock:^(MSALResult * _Nullable result, NSError * _Nullable error) {
              // Check error
              if (error) {
@@ -251,7 +266,8 @@
         [self.spinner startWithContainer:self];
 
         [AuthenticationManager.instance
-         getTokenInteractivelyWithCompletionBlock:^(NSString * _Nullable accessToken, NSError * _Nullable error) {
+         getTokenInteractivelyWithParentView:self
+         andCompletionBlock:^(NSString * _Nullable accessToken, NSError * _Nullable error) {
              dispatch_async(dispatch_get_main_queue(), ^{
                  [self.spinner stop];
 
@@ -299,29 +315,6 @@
 ## <a name="get-user-details"></a>获取用户详细信息
 
 在本节中，您将创建一个帮助程序类，以保存对 Microsoft Graph 的所有调用并`WelcomeViewController`更新，以使用此新类获取已登录的用户。
-
-1. 打开**authenticationmanager.java** ，并在文件顶部添加`#import`以下语句。
-
-    ```objc
-    #import <MSGraphMSALAuthProvider/MSGraphMSALAuthProvider.h>
-    ```
-
-1. 在`@interface`声明中添加以下行。
-
-    ```objc
-    - (MSALAuthenticationProvider*) getGraphAuthProvider;
-    ```
-
-1. 打开**authenticationmanager.java** ，并将以下函数添加到`AuthenticationManager`类中。
-
-    ```objc
-    - (MSALAuthenticationProvider*) getGraphAuthProvider {
-        // Create an MSAL auth provider for use with the Graph client
-        return [[MSALAuthenticationProvider alloc]
-                initWithPublicClientApplication:self.publicClient
-                andScopes:self.graphScopes];
-    }
-    ```
 
 1. 在名为**GraphManager**的**GraphTutorial**项目中创建一个新的**Cocoa Touch 类**。 在字段的 "**子类**" 中选择 " **NSObject** "。
 1. 打开**GraphManager** ，并将其内容替换为以下代码。
@@ -371,13 +364,9 @@
 
     - (id) init {
         if (self = [super init]) {
-
-            MSALAuthenticationProvider* authProvider =
-            [AuthenticationManager.instance getGraphAuthProvider];
-
             // Create the Graph client
             self.graphClient = [MSClientFactory
-                                createHTTPClientWithAuthenticationProvider:authProvider];
+                                createHTTPClientWithAuthenticationProvider:AuthenticationManager.instance];
         }
 
         return self;
