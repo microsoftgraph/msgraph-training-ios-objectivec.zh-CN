@@ -8,11 +8,11 @@
 
 - [iOS 目标-C Microsoft Graph 教程](https://docs.microsoft.com/graph/tutorials/ios-objectivec)
 
-## <a name="demos"></a>演示
+## <a name="completed-sample"></a>已完成示例
 
-- [01-创建-应用](demos/01-create-app)：已完成[创建 IOS 目标-C 应用程序](https://docs.microsoft.com/graph/tutorials/ios-objectivec?tutorial-step=1)
-- [02-添加-aad-auth](demos/02-add-aad-auth)：已完成[添加 Azure AD 身份验证](https://docs.microsoft.com/graph/tutorials/ios-objectivec?tutorial-step=3)
-- [03-外接 msgraph](demos/03-add-msgraph)：已完成[获取日历数据](https://docs.microsoft.com/graph/tutorials/ios-objectivec?tutorial-step=4)
+如果只想使用此实验室生成已完成的示例，可以在此处找到它。
+
+- [已完成项目](demo)
 
 ## <a name="watch-the-module"></a>观看模块
 
@@ -29,8 +29,9 @@
 
 | 版本 |        日期        |                                                               注释                                                               |
 | ------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.9     | 2020 年 4 月 7 日      | 包含最新 Xcode、MSAL 等的刷新教程。                                                                                     |
 | 1.8     | 2019 年 8 月 23 日    | 修订了针对 docs.microsoft.com 的加入培训                                                                                |
-| 1.7     | 2019年6月18日      | 更新了用于刷新截屏视频录制的自述文件                                                                                     |
+| 1.7     | 2019 年 6 月 18 日      | 更新了用于刷新截屏视频录制的自述文件                                                                                     |
 | 1.6     | 5月12日，2019       | 2019Q4 内容刷新                                                                                                               |
 | 1.5     | 2019 年 2 月 12 日  | 2019Q3 内容刷新                                                                                                               |
 | 1.4     | 2018年11月7日   | 2019Q2 内容刷新;已将进程替换为使用 Cocoapods 而不是 Carthage 以包含 MSAL iOS SDK;更新了 XCode 10.1 的实验室 |

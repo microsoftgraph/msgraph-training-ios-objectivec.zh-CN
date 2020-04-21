@@ -115,7 +115,7 @@
     @end
     ```
 
-您现在可以运行应用程序，登录，然后点击菜单中的 "**日历**" 导航项。 您应该会看到应用程序中的事件的 JSON 转储。
+1. 运行应用程序，登录，然后点击菜单中的 "**日历**" 导航项。 您应该会看到应用程序中的事件的 JSON 转储。
 
 ## <a name="display-the-results"></a>显示结果
 
@@ -131,96 +131,18 @@
 
 1. 打开**GraphManager**。 将`getEventsWithCompletionBlock`函数`completionBlock(data, nil);`中的行替换为以下代码。
 
-    ```objc
-    NSError* graphError;
-
-    // Deserialize to an events collection
-    MSCollection* eventsCollection = [[MSCollection alloc] initWithData:data error:&graphError];
-    if (graphError) {
-        completionBlock(nil, graphError);
-        return;
-    }
-
-    // Create an array to return
-    NSMutableArray* eventsArray = [[NSMutableArray alloc]
-                                initWithCapacity:eventsCollection.value.count];
-
-    for (id event in eventsCollection.value) {
-        // Deserialize the event and add to the array
-        MSGraphEvent* graphEvent = [[MSGraphEvent alloc] initWithDictionary:event];
-        [eventsArray addObject:graphEvent];
-    }
-
-    completionBlock(eventsArray, nil);
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/GraphManager.m" id="GetEventsSnippet" highlight="24-43":::
 
 ### <a name="update-calendarviewcontroller"></a>更新 CalendarViewController
 
 1. 在名为`CalendarTableViewCell`的**GraphTutorial**项目中创建一个新的**Cocoa Touch 类**文件。 在字段的 "**子类**" 中选择 " **UITableViewCell** "。
 1. 打开**CalendarTableViewCell** ，并将其内容替换为以下代码。
 
-    ```objc
-    #import <UIKit/UIKit.h>
-
-    NS_ASSUME_NONNULL_BEGIN
-
-    @interface CalendarTableViewCell : UITableViewCell
-
-    @property (nonatomic) NSString* subject;
-    @property (nonatomic) NSString* organizer;
-    @property (nonatomic) NSString* duration;
-
-    @end
-
-    NS_ASSUME_NONNULL_END
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/CalendarTableViewCell.h" id="CalendarTableCellSnippet":::
 
 1. 打开**CalendarTableViewCell**并将其内容替换为以下代码。
 
-    ```objc
-    #import "CalendarTableViewCell.h"
-
-    @interface CalendarTableViewCell()
-
-    @property (nonatomic) IBOutlet UILabel *subjectLabel;
-    @property (nonatomic) IBOutlet UILabel *organizerLabel;
-    @property (nonatomic) IBOutlet UILabel *durationLabel;
-
-    @end
-
-    @implementation CalendarTableViewCell
-
-    - (void)awakeFromNib {
-        [super awakeFromNib];
-        // Initialization code
-    }
-
-    - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
-        [super setSelected:selected animated:animated];
-
-        // Configure the view for the selected state
-    }
-
-    - (void) setSubject:(NSString *)subject {
-        _subject = subject;
-        self.subjectLabel.text = subject;
-        [self.subjectLabel sizeToFit];
-    }
-
-    - (void) setOrganizer:(NSString *)organizer {
-        _organizer = organizer;
-        self.organizerLabel.text = organizer;
-        [self.organizerLabel sizeToFit];
-    }
-
-    - (void) setDuration:(NSString *)duration {
-        _duration = duration;
-        self.durationLabel.text = duration;
-        [self.durationLabel sizeToFit];
-    }
-
-    @end
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/CalendarTableViewCell.m" id="CalendarTableCellSnippet":::
 
 1. 打开 "**情节提要**" 并找到**日历场景**。 在**日历场景**中选择**视图**并将其删除。
 
@@ -231,8 +153,25 @@
 1. 使用**库**向原型单元格添加三个**标签**。
 1. 选择 "原型" 单元格，然后选择 "**标识检查器**"。 将**类**更改为**CalendarTableViewCell**。
 1. 选择 "**属性" 检查器**并将`EventCell`"**标识符**" 设置为。
-1. 在**编辑器**菜单上，选择 "**解决自动布局问题**"，然后选择 **"欢迎视图控制器中的所有视图"** 下的 "**添加缺少约束**"。
 1. 选择**EventCell**后，选择 "**连接检查器**" 和`durationLabel`" `organizerLabel`连接" `subjectLabel` ，以及添加到情节提要上的单元格的标签。
+1. 按如下所示设置三个标签的属性和约束。
+
+    - **主题标签**
+        - 添加约束：在内容视图中添加间距的前导边距，值：0
+        - 添加约束：内容的尾随空格尾随边距，值：0
+        - 添加约束：内容的顶部间距上边距，值：0
+    - **组织者标签**
+        - 字体： System 12。0
+        - 添加约束：在内容视图中添加间距的前导边距，值：0
+        - 添加约束：内容的尾随空格尾随边距，值：0
+        - 添加约束：指向主题标签下边距的顶部间距，值：标准
+    - **工期标签**
+        - 字体： System 12。0
+        - 颜色：深灰色
+        - 添加约束：在内容视图中添加间距的前导边距，值：0
+        - 添加约束：内容的尾随空格尾随边距，值：0
+        - 添加约束：顶部间距到组织者标签底端，值：标准
+        - 添加约束：内容的底部间距查看下边距，值：8
 
     ![原型单元格布局的屏幕截图](./images/prototype-cell-layout.png)
 
@@ -245,71 +184,7 @@
 
 1. 打开**CalendarViewController**并将其内容替换为以下代码。
 
-    ```objc
-    #import "WelcomeViewController.h"
-    #import "SpinnerViewController.h"
-    #import "AuthenticationManager.h"
-    #import "GraphManager.h"
-    #import <MSGraphClientModels/MSGraphClientModels.h>
-
-    @interface WelcomeViewController ()
-
-    @property SpinnerViewController* spinner;
-
-    @end
-
-    @implementation WelcomeViewController
-
-    - (void)viewDidLoad {
-        [super viewDidLoad];
-        // Do any additional setup after loading the view.
-
-        self.spinner = [SpinnerViewController alloc];
-        [self.spinner startWithContainer:self];
-
-        self.userProfilePhoto.image = [UIImage imageNamed:@"DefaultUserPhoto"];
-
-        [GraphManager.instance
-         getMeWithCompletionBlock:^(MSGraphUser * _Nullable user, NSError * _Nullable error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self.spinner stop];
-
-                if (error) {
-                    // Show the error
-                    UIAlertController* alert = [UIAlertController
-                                                alertControllerWithTitle:@"Error getting user profile"
-                                                message:error.debugDescription
-                                                preferredStyle:UIAlertControllerStyleAlert];
-
-                    UIAlertAction* okButton = [UIAlertAction
-                                               actionWithTitle:@"OK"
-                                               style:UIAlertActionStyleDefault
-                                               handler:nil];
-
-                    [alert addAction:okButton];
-                    [self presentViewController:alert animated:true completion:nil];
-                    return;
-                }
-
-                // Set display name
-                self.userDisplayName.text = user.displayName ? : @"Mysterious Stranger";
-                [self.userDisplayName sizeToFit];
-
-                // AAD users have email in the mail attribute
-                // Personal accounts have email in the userPrincipalName attribute
-                self.userEmail.text = user.mail ? : user.userPrincipalName;
-                [self.userEmail sizeToFit];
-            });
-         }];
-    }
-
-    - (IBAction)signOut {
-        [AuthenticationManager.instance signOut];
-        [self performSegueWithIdentifier: @"userSignedOut" sender: nil];
-    }
-
-    @end
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/CalendarViewController.m" id="CalendarViewSnippet":::
 
 1. 运行应用程序，登录，然后点击 "**日历**" 选项卡。您应该会看到事件列表。
 
